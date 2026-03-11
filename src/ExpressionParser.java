@@ -58,8 +58,8 @@ public class ExpressionParser {
     }
 
     private static boolean isFunction(String s) {
-        return s.equals("sin") || s.equals("ln") || s.equals("sqrt")
-                || s.equals("cos") || s.equals("tan") || s.equals("atan");
+        return s.equals("sin") || s.equals("ln") || s.equals("log") || // Added "log"
+                s.equals("sqrt") || s.equals("cos") || s.equals("tan") || s.equals("atan");
     }
 
     // --- STEP 2 STARTS HERE ---
@@ -147,7 +147,7 @@ public class ExpressionParser {
     private static void processFunction(String func, Stack<MathNode> nodes) {
         MathNode child = nodes.pop();
         if (func.equals("sin")) nodes.push(new SinNode(child));
-        if (func.equals("ln")) nodes.push(new LogNode(child));
+        if (func.equals("ln") || func.equals("log")) nodes.push(new LogNode(child));
         if (func.equals("sqrt")) nodes.push(new SqrtNode(child));
         if (func.equals("cos")) nodes.push(new CosNode(child));
         if (func.equals("tan")) nodes.push(new TanNode(child));

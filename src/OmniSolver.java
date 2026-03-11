@@ -1,16 +1,41 @@
+import static java.lang.Double.isNaN;
+
 class OmniSolver {
 
     /**
      * Phase 1: Seed Improvement (The "Stripper")
      */
+    public void startSolver(String function, double seed) {
+        // GATEKEEPER CHECK
+        if (!isSafeToSolve(function)) {
+            System.out.println("[CRITICAL ERROR] Illegal mathematical expression. Solver aborted.");
+            return;
+        }
+
+        // Phase 1 and Phase 2 logic follows...
+    }
+
     private static double improveSeed(MathNode f, double target, double guess) {
         double x = guess;
+        double initialVal = f.evaluate(x);
+        // DEBUG PRINTS: Let's see the raw numbers
+        System.out.println("[DEBUG] Testing seed: " + x);
+        System.out.println("[DEBUG] Initial Value: " + initialVal);
+        if (Double.isNaN(initialVal) || Double.isInfinite(initialVal)) {
+            System.out.println("[WARNING] Initial seed is in an undefined region.");
+            return Double.NaN;
+        }
         System.out.println("[INFO] Phase 1: Improving Seed...");
         for (int i = 0; i < 5; i++) {
             double val = f.evaluate(x);
-            double error = target - val;
 
-            if (Double.isNaN(val) || Double.isInfinite(val)) return x / 2.0;
+            // This is the guard you added—make sure it's the FIRST thing after evaluate
+            if (isNaN(val) || Double.isInfinite(val)) {
+                System.out.println("[WARNING] Phase 1 hit a singularity. Aborting seed improvement.");
+                return Double.NaN;
+            }
+
+            double error = target - val;
 
             double slope = f.getDerivative(x);
 
@@ -30,7 +55,13 @@ class OmniSolver {
     /**
      * Phase 2: The Main Solver Loop
      */
-    public static double findRoot(MathNode equation, double target, double startX) {
+    public static double findRoot(String originalFunction, MathNode equation, double target, double startX) {
+
+        // 2. Now 'originalFunction' exists and can be checked
+        if (!isSafeToSolve(originalFunction)) {
+            System.out.println("[CRITICAL ERROR] Illegal mathematical expression (Division by Zero).");
+            return Double.NaN;
+        }
 
         // FIX ADDED: Relative epsilon — scales with tiny targets
         double epsilon = Math.max(1e-10, Math.abs(target) * 1e-4);
@@ -50,6 +81,7 @@ class OmniSolver {
         // ───────────────────────────────────────────────
         System.out.println("[Phase 1] Computing forward seed (fast growth dominates)...");
         double forwardSeed = improveSeed(equation, target, startX);
+        if (isNaN(forwardSeed)) return Double.NaN;
 
         System.out.println("[Phase 1] Computing reverse seed (slow/linear dominates)...");
         double reverseSeed = (Math.abs(target) < 1.0) ? startX * 1.1 : target;
@@ -57,7 +89,7 @@ class OmniSolver {
             double val = equation.evaluate(reverseSeed);
             double err = target - val;
             // FIX ADDED: bail out if reverse seed hits undefined territory
-            if (Double.isNaN(val) || Double.isInfinite(val)) break;
+            if (isNaN(val) || Double.isInfinite(val)) break;
             double sl = equation.getDerivative(reverseSeed);
             if (Math.abs(sl) > 1e-8) {
                 double d = err / sl;
@@ -65,13 +97,16 @@ class OmniSolver {
             } else {
                 reverseSeed += Math.signum(err) * 0.1;
             }
+            if (Double.isNaN(reverseSeed) || Double.isInfinite(reverseSeed)) {
+                reverseSeed = forwardSeed; // Fallback to the good one if the reverse fails
+            }
         }
 
         double valForward = equation.evaluate(forwardSeed);
         double errForward = Math.abs(target - valForward);
 
         double valReverse = equation.evaluate(reverseSeed);
-        double errReverse = (Double.isNaN(valReverse) || Double.isInfinite(valReverse))
+        double errReverse = (isNaN(valReverse) || Double.isInfinite(valReverse))
                 ? Double.MAX_VALUE : Math.abs(target - valReverse);
 
         double x;
@@ -95,6 +130,11 @@ class OmniSolver {
         for (int i = 0; i < maxIter; i++) {
             double currentVal = equation.evaluate(x);
             double error = target - currentVal;
+
+            if (Double.isInfinite(currentVal) || isNaN(currentVal)) {
+                System.out.println("[WARNING] Mathematical singularity or undefined region hit at x = " + x);
+                return Double.NaN; // Stop the "Robot" immediately
+            }
 
             if (Math.abs(error) < epsilon) {
                 System.out.println("[SUCCESS] Converged in " + i + " iterations.");
@@ -126,7 +166,7 @@ class OmniSolver {
             }
 
             // Divergence check (your original)
-            if (Math.abs(error) > prevError * 10 || Double.isInfinite(error) || Double.isNaN(error)) {
+            if (Math.abs(error) > prevError * 10 || Double.isInfinite(error) || isNaN(error)) {
                 System.out.println("[WARNING] Divergence detected - switching to Bisection");
                 return bisectionFallback(equation, target, x * 0.8, x * 1.2, 40);
             }
@@ -189,7 +229,7 @@ class OmniSolver {
         double fb = f.evaluate(b) - target;
 
         // FIX ADDED: NaN safety in bisection bounds
-        if (Double.isNaN(fa) || Double.isNaN(fb)) {
+        if (isNaN(fa) || isNaN(fb)) {
             System.out.println("[ERROR] NaN in bisection bounds. Returning best guess.");
             return (a + b) / 2;
         }
@@ -204,7 +244,7 @@ class OmniSolver {
             double fMid = f.evaluate(mid) - target;
 
             // FIX ADDED: NaN safety inside bisection loop
-            if (Double.isNaN(fMid)) break;
+            if (isNaN(fMid)) break;
             if (Math.abs(fMid) < 1e-10) return mid;
 
             if (fa * fMid < 0) {
@@ -217,4 +257,11 @@ class OmniSolver {
         }
         return (a + b) / 2;
     }
+        private static boolean isSafeToSolve(String function) {
+            if (function == null || function.trim().isEmpty()) return false;
+            // Catch the literal division by zero
+            if (function.contains("/0")) return false;
+            return true;
+        }
+
 }

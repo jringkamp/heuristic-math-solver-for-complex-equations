@@ -11,13 +11,22 @@ class OperatorNode extends MathNode {
     // 1. EVALUATION (The "Nerves")
     @Override
     double evaluate(double x) {
+        double l = left.evaluate(x);
+        double r = right.evaluate(x);
+        double result = 0;
+
         switch (operator) {
-            case '+': return left.evaluate(x) + right.evaluate(x);
-            case '-': return left.evaluate(x) - right.evaluate(x);
-            case '*': return left.evaluate(x) * right.evaluate(x);
-            case '^': return Math.pow(left.evaluate(x), right.evaluate(x));
-            default: return 0;
+            case '+': result = l + r; break;
+            case '-': result = l - r; break;
+            case '*': result = l * r; break;
+            case '/':
+                result = l / r;
+                // DEBUG: See the division happen
+                System.out.println("[DEBUG] Node Eval: " + l + " / " + r + " = " + result);
+                break;
+            case '^': result = Math.pow(l, r); break;
         }
+        return result;
     }
 
     // 2. WEIGHTING (The "Eyes" - Identifying Engines)
@@ -38,13 +47,18 @@ class OperatorNode extends MathNode {
     @Override
     double getDerivative(double x) {
         switch (operator) {
-            case '+':
-                return left.getDerivative(x) + right.getDerivative(x);
-            case '-':                                                      // FIX: was missing
-                return left.getDerivative(x) - right.getDerivative(x);
-            case '*':                                                      // FIX: was missing
+            // ... (other cases)
+            case '/': // ADD THIS (Quotient Rule)
+                double u = left.evaluate(x);
+                double v = right.evaluate(x);
+                double du = left.getDerivative(x);
+                double dv = right.getDerivative(x);
+                return (du * v - u * dv) / (v * v);
+
+            case '*':
                 return left.getDerivative(x) * right.evaluate(x)
                         + left.evaluate(x) * right.getDerivative(x);
+
             case '^':
                 if (left instanceof ConstantNode) {
                     // Exponential: b^x -> b^x * ln(b) * x'

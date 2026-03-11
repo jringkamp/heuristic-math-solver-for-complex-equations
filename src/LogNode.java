@@ -5,7 +5,7 @@ class LogNode extends MathNode {
     @Override
     double evaluate(double x) {
         double val = child.evaluate(x);
-        if (val <= 0) return Double.NaN; // The Forbidden Zone
+        // If this is missing or has a default 'return 1', that's our bug!
         return Math.log(val);
     }
 

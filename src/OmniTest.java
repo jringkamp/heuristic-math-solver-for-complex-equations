@@ -18,7 +18,7 @@ public class OmniTest {
                 double seed = Double.parseDouble(sc.nextLine());
 
                 System.out.println("--- Solving: " + input + " ---");
-                double root = OmniSolver.findRoot(equation, 0.0, seed);
+                double root = OmniSolver.findRoot(input, equation, 0.0, seed);
 
                 System.out.printf("\nFINAL RESULT: %.10f\n", root);
             } catch (Exception e) {
