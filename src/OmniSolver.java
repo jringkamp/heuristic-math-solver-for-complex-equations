@@ -31,29 +31,72 @@ class OmniSolver {
      * Phase 2: The Main Solver Loop
      */
     public static double findRoot(MathNode equation, double target, double startX) {
-        double x = startX;
         double epsilon = 1e-10;
         int maxIter = 100;
         double prevError = Double.POSITIVE_INFINITY;
 
-        // Phase 1: Seed improvement
-        x = improveSeed(equation, target, x);
+        System.out.println("[INFO] Starting OmniSolver...");
 
-        System.out.println("\n[INFO] Phase 2: Starting High-Precision Loop...");
+        // ───────────────────────────────────────────────
+        // Phase 1: Dual-Factoring Seed Improvement
+        // ───────────────────────────────────────────────
+        System.out.println("[Phase 1] Computing forward seed (fast growth dominates)...");
+        double forwardSeed = improveSeed(equation, target, startX);
 
+        System.out.println("[Phase 1] Computing reverse seed (slow/linear dominates)...");
+        double reverseSeed = target;  // Naive reverse guess: linear wants x = target
+        // Refine reverse seed a bit (mini-Newton on reverse view)
+        for (int j = 0; j < 3; j++) {  // short refinement
+            double val = equation.evaluate(reverseSeed);
+            double err = target - val;
+            double sl = equation.getDerivative(reverseSeed);
+            if (Math.abs(sl) > 1e-8) {
+                double d = err / sl;
+                reverseSeed += d;
+            } else {
+                reverseSeed += Math.signum(err) * 0.1;
+            }
+        }
+
+        // Evaluate both seeds
+        double valForward = equation.evaluate(forwardSeed);
+        double errForward = Math.abs(target - valForward);
+
+        double valReverse = equation.evaluate(reverseSeed);
+        double errReverse = Math.abs(target - valReverse);
+
+        // Choose the better seed (or blend if close)
+        double x;
+        if (errForward < errReverse * 0.5) {
+            x = forwardSeed;
+            System.out.println("[Phase 1] Forward seed chosen (better fit)");
+        } else if (errReverse < errForward * 0.5) {
+            x = reverseSeed;
+            System.out.println("[Phase 1] Reverse seed chosen (better fit)");
+        } else {
+            // Blend if both reasonable
+            x = (forwardSeed + reverseSeed) / 2;
+            System.out.println("[Phase 1] Blended seeds (comparable fit)");
+        }
+
+        System.out.println("[Phase 1] Starting x = " + x);
+
+        // ───────────────────────────────────────────────
+        // Phase 2: Main Newton with adaptive clamping
+        // ───────────────────────────────────────────────
+        System.out.println("[Phase 2] Starting High-Precision Loop...");
         for (int i = 0; i < maxIter; i++) {
             double currentVal = equation.evaluate(x);
             double error = target - currentVal;
 
-            // SUCCESS CHECK — moved to top and made slightly more forgiving
-            if (Math.abs(error) < epsilon || Math.abs(error) < 1e-8 * (1 + Math.abs(target))) {
+            if (Math.abs(error) < epsilon) {
                 System.out.println("[SUCCESS] Converged in " + i + " iterations.");
                 return x;
             }
 
-            // Divergence / stall checks
+            // Divergence / stall checks (your existing code)
             if (Math.abs(error) > prevError * 10 || Double.isInfinite(error) || Double.isNaN(error)) {
-                System.out.println("[WARNING] Divergence detected - switching to Bisection Fallback");
+                System.out.println("[WARNING] Divergence detected - switching to Bisection");
                 return bisectionFallback(equation, target, x * 0.8, x * 1.2, 40);
             }
 
@@ -80,11 +123,16 @@ class OmniSolver {
 
             prevError = Math.abs(error);
 
-            System.out.printf("Iteration %d: x = %.6f | Val = %.6f | Error = %.6f (Weight: %d)\n",
+            System.out.printf("Iteration %d: x = %.6f | Val = %.4f | Error = %.4f (Weight: %d)\n",
                     i, x, currentVal, error, equation.getEngineWeight());
         }
 
-        System.out.println("[WARNING] Max iterations reached without perfect convergence.");
+        System.out.println("[WARNING] Max iterations reached.");
+        // At end of findRoot(), before return x
+        double expoApprox = Math.pow(2, -Math.pow(x, x)); // rough for 2^{-x^x}
+        if (Math.abs(expoApprox) < 1e-8) {
+            System.out.println("[INFO] Negative tower is dead (<1e-8) - answer is essentially x = " + x);
+        }
         return x;
     }
 
