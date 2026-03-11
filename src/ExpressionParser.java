@@ -58,7 +58,8 @@ public class ExpressionParser {
     }
 
     private static boolean isFunction(String s) {
-        return s.equals("sin") || s.equals("ln") || s.equals("sqrt") || s.equals("cos");
+        return s.equals("sin") || s.equals("ln") || s.equals("sqrt")
+                || s.equals("cos") || s.equals("tan") || s.equals("atan");
     }
 
     // --- STEP 2 STARTS HERE ---
@@ -148,6 +149,9 @@ public class ExpressionParser {
         if (func.equals("sin")) nodes.push(new SinNode(child));
         if (func.equals("ln")) nodes.push(new LogNode(child));
         if (func.equals("sqrt")) nodes.push(new SqrtNode(child));
+        if (func.equals("cos")) nodes.push(new CosNode(child));
+        if (func.equals("tan")) nodes.push(new TanNode(child));
+        if (func.equals("atan")) nodes.push(new AtanNode(child));
     }
 
 
