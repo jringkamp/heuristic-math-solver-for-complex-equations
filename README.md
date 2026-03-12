@@ -40,6 +40,22 @@ Enter guess (seed): 2
 
 FINAL RESULT: 2.2107367840
 
+Supported Equation Types
+The solver handles a broader class of equations than the core use case suggests:
+
+Exponential towers (x^x, x^x^x)
+Mixed polynomial-exponential (x^x + x^2, x^3 - x^x)
+Trigonometric combinations (sin(x) + x^2)
+Nested fractional exponents (x^(x/2) + x^3)
+
+Known Limitations
+
+Negative seeds with x^x type terms enter complex number territory and are currently unsupported in real-number mode. The solver will detect the singularity and abort cleanly rather than return a wrong answer.
+BigDecimal arbitrary precision mode is functional but not yet fully connected across all equation types (in progress).
+
+Performance Notes
+Phase 1 seed approximation is the core innovation of this engine. In typical cases the growth-rate stripping produces a seed close enough that Phase 2 converges in 0-2 iterations. The planned midpoint optimization will address edge cases where Phase 1 lands further from the root, currently capped at 99 iterations.
+
 Development Roadmap
 
     [In Progress] BigInt Integration: Fully connecting the BigMode classes to handle 34-digit arbitrary precision across all equation types.
