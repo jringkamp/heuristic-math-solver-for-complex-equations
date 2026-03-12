@@ -6,7 +6,7 @@ The Strategy: Factoring & Stripping
 
 Instead of relying on a "good guess," this engine uses a Growth-Rate Heuristic:
 
-    Variable Stripping: The algorithm identifies the dominant growth term (e.g., the xxx tower) and "strips" the equation to analyze the primary growth rate.
+    Variable Stripping: The algorithm identifies the dominant growth term (e.g., the x^x^x tower) and "strips" the equation to analyze the primary growth rate.
 
     Search-Space Pruning: By factoring the equation based on transcendental properties, the solver narrows the search bounds before the refinement process begins.
 
