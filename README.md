@@ -1,4 +1,4 @@
-Prototype working solver. More will be added to it. Will be adding mid point iteration reduction to lesson the amounts of iterations requires for optimization. Will add more class systems
+Prototype working solver. More will be added to it. Will be adding mid point iteration reduction to lessen the amounts of iterations requires for optimization. Will add more class systems
 to fine tune the solver to handle approaches it current struggles in. Using a 2 factor apprach of logic stripping to view growth equations. 
 
 Project Overview
