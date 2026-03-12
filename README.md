@@ -1,5 +1,5 @@
 Prototype working solver. More will be added to it. Will be adding mid point iteration reduction to lessen the amounts of iterations requires for optimization. Will add more class systems
-to fine tune the solver to handle approaches it current struggles in. Using a 2 factor approach of logic stripping to view growth equations. 
+to fine tune the solver to handle approaches it current struggles in. Using a 2 factor approach of logic stripping to view growth equations. Will be adding BigInt later to class system and solver
 
 Project Overview
 
@@ -18,9 +18,6 @@ Unlike standard solvers that rely solely on brute-force iteration or Newton’s 
 Technical Specifications
 
     Language: Java
-
-    Core Mechanics: Will be adding big functions later when project is more fined tune. Will be adding a mid point search approximation function to direct the approximations to
-    reduce interactions down after discussing different algorithm logic with proffessor. 
 
     Heuristic Lambert W Solver
 
