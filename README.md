@@ -1,6 +1,8 @@
 OmniSolver: Heuristic Numerical Engine (v1.0-Stable)
 Project Overview
 
+This solver is looking at a different way to approach this problem outside of Lambert W
+
 This is a specialized Java-based numerical engine designed to solve transcendental equations where variables exist in both the base and the exponent (e.g., x^x+x=k and x^x^x+x=k). Because these equations lack a standard algebraic solution, this solver utilizes a custom "Stripping" heuristic to achieve convergence where traditional iterative methods (like Newton's Method) often fail due to extreme growth gradients.
 The Strategy: Factoring & Stripping
 
