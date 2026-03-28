@@ -1,13 +1,18 @@
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.regex.*;
+
 
 public class ExpressionParser {
 
     private static final Map<String, Integer> PRECEDENCE = Map.of(
             "+", 1, "-", 1,
             "*", 2, "/", 2,
-            "^", 3, "u-", 4   // unary minus has higher precedence////
-            );
+            "^", 3,
+            "u-", 2   // ← CHANGED FROM 4 TO 2
+            // Now -x^2 = -(x^2)  (math convention)
+            // Still higher than binary +-, lower than ^
+    );
 
     public static List<String> tokenize(String expression) {
         List<String> tokens = new ArrayList<>();
@@ -58,8 +63,9 @@ public class ExpressionParser {
     }
 
     private static boolean isFunction(String s) {
-        return s.equals("sin") || s.equals("ln") || s.equals("log") || // Added "log"
-                s.equals("sqrt") || s.equals("cos") || s.equals("tan") || s.equals("atan");
+        return s.equals("sin") || s.equals("ln") || s.equals("log") ||
+                s.equals("sqrt") || s.equals("cos") || s.equals("tan") ||
+                s.equals("atan") || s.equals("exp") || s.equals("abs");  // ← added
     }
 
     // --- STEP 2 STARTS HERE ---
@@ -107,24 +113,33 @@ public class ExpressionParser {
         }
         return nodes.pop();
     }
-    static class NegateNode extends MathNode {
+
+    // 1. Add "implements BigEvaluable"
+    static class NegateNode extends MathNode implements BigEvaluable {
         MathNode child;
 
         public NegateNode(MathNode child) { this.child = child; }
 
+        @Override double evaluate(double x) { return -child.evaluate(x); }
+        @Override int getEngineWeight() { return child.getEngineWeight(); }
+        @Override double getDerivative(double x) { return -child.getDerivative(x); }
+
+        // 2. BIG IMPLEMENTATION
         @Override
-        double evaluate(double x) {
-            return -child.evaluate(x);
+        public BigDecimal evaluateBig(BigDecimal x) {
+            // We cast 'child' to BigEvaluable to access the big methods
+            if (child instanceof BigEvaluable) {
+                return ((BigEvaluable) child).evaluateBig(x).negate();
+            }
+            throw new UnsupportedOperationException("Child does not support Big Mode");
         }
 
         @Override
-        int getEngineWeight() {
-            return child.getEngineWeight();
-        }
-
-        @Override
-        double getDerivative(double x) {
-            return -child.getDerivative(x);
+        public BigDecimal getDerivativeBig(BigDecimal x) {
+            if (child instanceof BigEvaluable) {
+                return ((BigEvaluable) child).getDerivativeBig(x).negate();
+            }
+            throw new UnsupportedOperationException("Child does not support Big Mode");
         }
     }
 
@@ -146,12 +161,14 @@ public class ExpressionParser {
 
     private static void processFunction(String func, Stack<MathNode> nodes) {
         MathNode child = nodes.pop();
-        if (func.equals("sin")) nodes.push(new SinNode(child));
+        if (func.equals("sin"))              nodes.push(new SinNode(child));
         if (func.equals("ln") || func.equals("log")) nodes.push(new LogNode(child));
-        if (func.equals("sqrt")) nodes.push(new SqrtNode(child));
-        if (func.equals("cos")) nodes.push(new CosNode(child));
-        if (func.equals("tan")) nodes.push(new TanNode(child));
-        if (func.equals("atan")) nodes.push(new AtanNode(child));
+        if (func.equals("sqrt"))             nodes.push(new SqrtNode(child));
+        if (func.equals("cos"))              nodes.push(new CosNode(child));
+        if (func.equals("tan"))              nodes.push(new TanNode(child));
+        if (func.equals("atan"))             nodes.push(new AtanNode(child));
+        if (func.equals("exp"))              nodes.push(new ExpNode(child));  // ← added
+        if (func.equals("abs"))              nodes.push(new AbsNode(child));  // ← added
     }
 
 

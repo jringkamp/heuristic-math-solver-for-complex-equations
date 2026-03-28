@@ -1,3 +1,4 @@
+import java.math.BigDecimal;
 abstract class MathNode {
     abstract int getEngineWeight();
     // NEW: Calculate the numerical value at point x
@@ -6,28 +7,45 @@ abstract class MathNode {
 
 }
 
-class ConstantNode extends MathNode {
+
+
+// Add "implements BigEvaluable" here!
+class ConstantNode extends MathNode implements BigEvaluable {
     double value;
     public ConstantNode(double value) { this.value = value; }
 
     @Override int getEngineWeight() { return 0; }
     @Override double evaluate(double x) { return value; }
+    @Override double getDerivative(double x) { return 0.0; }
 
-    // THE FIX: The derivative of a constant is always 0
+    // This @Override now refers to the INTERFACE
     @Override
-    double getDerivative(double x) {
-        return 0.0;
+    public BigDecimal evaluateBig(BigDecimal x) {
+        return BigDecimal.valueOf(value);
+    }
+
+    @Override
+    public BigDecimal getDerivativeBig(BigDecimal x) {
+        return BigDecimal.ZERO;
     }
 }
 
-class VariableNode extends MathNode {
+// ADD "implements BigEvaluable" RIGHT HERE
+class VariableNode extends MathNode implements BigEvaluable {
     @Override int getEngineWeight() { return 1; }
     @Override double evaluate(double x) { return x; }
+    @Override double getDerivative(double x) { return 1.0; }
 
-    // THE FIX: The derivative of x is always 1
+    // This @Override is now valid because of the Interface!
     @Override
-    double getDerivative(double x) {
-        return 1.0;
+    public BigDecimal evaluateBig(BigDecimal x) {
+        return x;
     }
 
+    @Override
+    public BigDecimal getDerivativeBig(BigDecimal x) {
+        return BigDecimal.ONE;
+    }
 }
+
+
