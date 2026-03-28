@@ -212,6 +212,13 @@ class OmniSolver {
             x = (forwardSeed + reverseSeed) / 2;
             System.out.println("[Phase 1] Blended seeds (comparable fit)");
         }
+
+        // Also consider the original startX — improveSeed may have drifted to a worse region
+        double errStartX = Math.abs(equation.evaluate(startX) - target);
+        if (!Double.isNaN(errStartX) && !Double.isInfinite(errStartX) && errStartX < Math.abs(equation.evaluate(x) - target)) {
+            x = startX;
+            System.out.println("[Phase 1] Original startX kept (better fit than factored seeds)");
+        }
         System.out.println("[Phase 1] Starting x = " + x);
         // Phase 1.5: Bracket expansion
         double spread = Math.max(5.0, Math.abs(x) * 0.5);
@@ -231,7 +238,8 @@ class OmniSolver {
         }
 
         int expandCount = 0;
-        while (fLow * fHigh > 0 && expandCount < 20) {
+        while (fLow * fHigh > 0 && expandCount < 40) {
+            // Expand outward
             double leftStep  = Math.max(10.0, Math.abs(low)  * 0.5);
             double rightStep = Math.max(10.0, Math.abs(high) * 0.5);
 
@@ -248,6 +256,23 @@ class OmniSolver {
             if (!Double.isNaN(newFHigh) && !Double.isInfinite(newFHigh)) {
                 high  = newHigh;
                 fHigh = newFHigh;
+            }
+
+            // Also probe inward: the root may be between the seed and zero
+            // (e.g. x^2 - 4 = 0 has sign change between 0 and 2, not outward)
+            if (fLow * fHigh > 0 && expandCount < 10) {
+                double mid = (low + high) / 2.0;
+                double fMid = equation.evaluate(mid) - target;
+                if (!Double.isNaN(fMid) && !Double.isInfinite(fMid)) {
+                    if (fMid * fHigh <= 0) {
+                        // Prefer the right/positive half when both halves work
+                        low  = mid;
+                        fLow = fMid;
+                    } else if (fLow * fMid <= 0) {
+                        high  = mid;
+                        fHigh = fMid;
+                    }
+                }
             }
 
             expandCount++;
@@ -333,7 +358,8 @@ class OmniSolver {
 
             // ──────── NEW: POLY FIX for small-target even powers ────────
             if (equation.getEngineWeight() == 2 && Math.abs(target) < 1e-5) {
-                x = Math.signum(target) * 2.0;  // start farther out
+                // signum(0) = 0, which would send Newton to x=0 (flat slope) — use 1.0 instead
+                x = (target >= 0 ? 1.0 : -1.0) * 2.0;
                 System.out.println("[POLY FIX] Forcing wider start x = " + x + " for small target");
             }
 
@@ -348,6 +374,15 @@ class OmniSolver {
                 double slope = equation.getDerivative(x);
 
                 if (Double.isInfinite(currentVal) || isNaN(currentVal)) {
+                    // For domain-restricted functions (sqrt, ln), Newton may wander negative.
+                    // Try nudging back toward positive territory before giving up.
+                    String funcLower = originalFunction.toLowerCase();
+                    boolean hasDomainRestriction = funcLower.contains("sqrt") || funcLower.contains("ln") || funcLower.contains("log");
+                    if (hasDomainRestriction && x <= 0) {
+                        x = Math.abs(x) + 0.5;
+                        System.out.println("[DOMAIN NUDGE] Reflected x to " + x);
+                        continue;
+                    }
                     System.out.println("[WARNING] Function undefined at x = " + x + " (complex or singularity).");
                     System.out.println("[CONCLUSION] No real solution found — equation may have no real roots.");
                     return Double.NaN;
@@ -440,27 +475,17 @@ class OmniSolver {
     // ─────────────────────────────────────────
     private static double checkAlternativeRoot(MathNode equation, double target, double x,
                                                double epsilon, String originalFunction) {
-        double finalVal = equation.evaluate(x);
-        if (Math.abs(finalVal - target) > epsilon * 10) {
-            return x; // not close enough anyway
-        }
-
-        // Check negative side (useful for even powers, symmetric equations)
-        double altX = -x;
-        double altVal = equation.evaluate(altX);
-        if (!Double.isNaN(altVal) && !Double.isInfinite(altVal)) {
-            double altError = Math.abs(altVal - target);
-            double currError = Math.abs(finalVal - target);
-            if (altError < currError) {
-                System.out.println("[ALT ROOT] Negative side better: " + altX);
-                x = altX;
-            }
-        }
-
-        // Domain enforcement for ln, log, sqrt
+        // Domain enforcement for ln, log, sqrt — solution must be positive
         String funcLower = originalFunction.toLowerCase();
         if ((funcLower.contains("ln") || funcLower.contains("log") || funcLower.contains("sqrt")) && x <= 0) {
             System.out.println("[DOMAIN] Solution in invalid region for ln/log/sqrt → returning NaN");
+            return Double.NaN;
+        }
+
+        // Validate: if the solution doesn't actually satisfy f(x)=target, it's a false convergence
+        double val = equation.evaluate(x);
+        if (!Double.isNaN(x) && (Double.isNaN(val) || Math.abs(val - target) > Math.max(1e-4, Math.abs(target) * 1e-3 + 1e-4))) {
+            System.out.println("[VALIDATE] Solution x=" + x + " gives f(x)=" + val + ", not close to target=" + target + " → NaN");
             return Double.NaN;
         }
 

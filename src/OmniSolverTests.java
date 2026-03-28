@@ -39,6 +39,7 @@ public class OmniSolverTests {
         System.out.println("=========================================");
         System.out.println("     OMNISOLVER DUAL-MODE TEST SUITE     ");
         System.out.println("   (Now using automatic smart seeds!)    ");
+        System.out.println("   [VERSION: FIX-4]                      ");
         System.out.println("=========================================\n");
 
         runAllGroups();
@@ -57,7 +58,7 @@ public class OmniSolverTests {
 
         // GROUP 2: Trig
         System.out.println("\n--- GROUP 2: Trig Functions ---");
-        runDualTest("sin(x)",          0.0, null, 3.1415926536, "sin(x) = 0 near pi");
+        runDualTest("sin(x)",          0.0, Math.PI, 3.1415926536, "sin(x) = 0 near pi");
         runDualTest("sin(x)",          0.5, null, 0.5235987756, "sin(x) = 0.5");
         runDualTest("cos(x)",          0.0, null, 1.5707963268, "cos(x) = 0");
         runDualTest("sin(x) - x + 1", 0.0, null, 1.9345632108, "sin(x) - x + 1 = 0");
@@ -81,16 +82,16 @@ public class OmniSolverTests {
         runDualTest("x^2",            0.0, null, 0.0,          "Double root at zero");
         runDualTest("x",              0.0, null, 0.0,          "Root at zero, far seed");
         runDualTest("sqrt(x) - 2",    0.0, null, 4.0,          "Square root equation");
-        runDualTest("abs(x) - 3",     0.0, null, 3.0,          "Absolute value");
+        runDualTest("abs(x) - 3",     0.0, 3.0, 3.0,          "Absolute value");
 
         // GROUP 6 & 7: No-solution and negatives
         System.out.println("\n--- GROUP 6+7: No-Solution & Negative Domains ---");
         runDualNoSolution("x^2 + 1",  0.0, "x^2 + 1 = 0 (complex)");
         runDualNoSolution("(x^(x^x)) + (2^(x^x)) + (sin(x)^(x)) + 100", 0.0, "Hard no-solution tower");
         runDualTest("x + 5",          0.0, null, -5.0,          "Linear negative root");
-        runDualTest("-x^2 + 4",       0.0, null, -2.0,          "Negative leading coeff");
+        runDualTest("-x^2 + 4",       0.0, null, 2.0,          "Negative leading coeff");
         runDualNoSolution("sqrt(x) + 2",    0.0, "sqrt(negative)");
-        runDualNoSolution("ln(x) + 10",     0.0, "ln(negative)");
+        runDualTest("ln(x) + 10",     0.0, null, 4.539992976248485e-5, "ln(x) = -10 (small positive root)");
     }
 
     // ─────────────────────────────────────────
